@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODM Performance Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14171A;
+    --bg-panel: #1C2024;
+    --line: #2A2F35;
+    --orange: #FF5A1F;
+    --cyan: #3FD6C5;
+    --text: #E7EAEC;
+    --text-dim: #8A9299;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .app {
+    width: 100%;
+    max-width: 440px;
+  }
+  .scanline {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    margin-bottom: 20px;
+    opacity: 0.6;
+  }
+  header {
+    margin-bottom: 28px;
+  }
+  .tag {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+  }
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-top: 6px;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .progress {
+    display: flex;
+    gap: 6px;
+    margin: 24px 0;
+  }
+  .progress div {
+    height: 3px;
+    flex: 1;
+    background: var(--line);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .progress div.active { background: var(--orange); }
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .step { display: none; }
+  .step.active { display: block; }
+  .q-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .q-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .opt {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .opt:hover { border-color: var(--cyan); }
+  .opt:active { background: #22272C; }
+  .opt .hint {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .result-tag {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--orange);
+    letter-spacing: 0.08em;
+  }
+  .result-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 6px 0 20px;
+  }
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .setting-row:last-of-type { border-bottom: none; }
+  .setting-name { color: var(--text-dim); }
+  .setting-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    color: var(--cyan);
+  }
+  .tips {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .tips .q-label { color: var(--orange); }
+  .tips ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .tips li {
+    font-size: 14px;
+    line-height: 1.5;
+    padding-left: 16px;
+    position: relative;
+    color: var(--text);
+  }
+  .tips li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    background: var(--orange);
+  }
+  .restart {
+    width: 100%;
+    margin-top: 24px;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .restart:hover { border-color: var(--cyan); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="scanline"></div>
+  <header>
+    <div class="tag">CODM DEVICE SCAN</div>
+    <h1>Performance Optimizer</h1>
+    <p class="sub">Answer a few questions about your phone. Get settings built for your exact hardware — not generic advice.</p>
+  </header>
+
+  <div class="progress">
+    <div id="p1" class="active"></div>
+    <div id="p2"></div>
+    <div id="p3"></div>
+  </div>
+
+  <div class="panel">
+
+    <!-- Step 1: RAM known? -->
+    <div class="step active" id="step-ram-known">
+      <div class="q-label">STEP 1 / 3</div>
+      <div class="q-title">Do you know your phone's RAM?</div>
+      <div class="options">
+        <button class="opt" onclick="goToRamSelect()">Yes, I know it</button>
+        <button class="opt" onclick="goToModelLookup()">Not sure — let me find my model</button>
+      </div>
+    </div>
+
+    <!-- Step 1a: RAM select -->
+    <div class="step" id="step-ram-select">
+      <div class="q-label">STEP 1 / 3</div>
+      <div class="q-title">How much RAM does your phone have?</div>
+      <div class="options">
+        <button class="opt" onclick="setRam('low')">2–3GB<span class="hint">Entry-level budget phone</span></button>
+        <button class="opt" onclick="setRam('mid')">4GB<span class="hint">Common budget/mid phone</span></button>
+        <button class="opt" onclick="setRam('high')">6GB+<span class="hint">Mid-range or newer phone</span></button>
+      </div>
+      <span class="back-link" onclick="goToStart()">← Back</span>
+    </div>
+
+    <!-- Step 1b: Model lookup -->
+    <div class="step" id="step-model-lookup">
+      <div class="q-label">STEP 1 / 3</div>
+      <div class="q-title">Select your phone model</div>
+      <select id="model-select" onchange="setRamFromModel(this.value)">
+        <option value="">— Choose your model —</option>
+        <optgroup label="2–3GB RAM">
+          <option value="low">Infinix Smart 8 / Smart 8 HD</option>
+          <option value="low">iKall I1 4G</option>
+          <option value="low">Lava O1</option>
+          <option value="low">Lava Bold N4 Lite</option>
+        </optgroup>
+        <optgroup label="4GB RAM">
+          <option value="mid">Samsung Galaxy F05</option>
+          <option value="mid">Samsung Galaxy F70e 5G</option>
+          <option value="mid">itel Zeno F30 5G</option>
+          <option value="mid">itel Zeno 20 Max</option>
+          <option value="mid">Redmi 13C (4GB)</option>
+          <option value="mid">Lava Blaze 2 4G</option>
+        </optgroup>
+        <optgroup label="6GB+ RAM">
+          <option value="high">Redmi A4 5G</option>
+          <option value="high">Redmi 14C</option>
+          <option value="high">Redmi Note 15</option>
+          <option value="high">POCO M7 Pro</option>
+          <option value="high">POCO X7</option>
+          <option value="high">Infinix Note 50X</option>
+          <option value="high">Infinix Hot 50 5G</option>
+          <option value="high">realme P3</option>
+          <option value="high">realme Narzo 70 Turbo</option>
+          <option value="high">Tecno Pova 6 Neo</option>
+          <option value="high">Moto G64</option>
+        </optgroup>
+        <option value="unknown">My phone isn't listed</option>
+      </select>
+      <span class="back-link" onclick="goToStart()">← Back</span>
+    </div>
+
+    <!-- Step 2: Issue -->
+    <div class="step" id="step-issue">
+      <div class="q-label">STEP 2 / 3</div>
+      <div class="q-title">What's the main problem?</div>
+      <div class="options">
+        <button class="opt" onclick="setIssue('lag')">Lag / stutter / frame drops</button>
+        <button class="opt" onclick="setIssue('heat')">Overheating</button>
+        <button class="opt" onclick="setIssue('both')">Both</button>
+      </div>
+      <span class="back-link" onclick="goToStart()">← Back</span>
+    </div>
+
+    <!-- Step 3: Result -->
+    <div class="step" id="step-result">
+      <div class="result-tag" id="result-tag">SCAN COMPLETE</div>
+      <div class="result-title" id="result-title"></div>
+
+      <div id="settings-list"></div>
+
+      <div class="tips">
+        <div class="q-label">ALSO DO THIS</div>
+        <ul id="tips-list"></ul>
+      </div>
+
+      <button class="restart" onclick="goToStart()">Run scan again</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let ram = null;
+  let issue = null;
+
+  const profiles = {
+    low: {
+      graphics: "Low", frameRate: "Max", shadows: "Off",
+      style: "Smooth", resolution: "Low"
+    },
+    mid: {
+      graphics: "Medium", frameRate: "High", shadows: "Off",
+      style: "Smooth", resolution: "Medium"
+    },
+    high: {
+      graphics: "Medium–High", frameRate: "High", shadows: "Off",
+      style: "Smooth or Realistic", resolution: "High"
+    }
+  };
+
+  const tipsByCase = {
+    "low-lag": [
+      "Close every background app before launching CODM — even ones you think are closed.",
+      "Restart your phone before long play sessions to clear memory.",
+      "Play in 15–20 minute sessions with short breaks — performance degrades as memory fills up."
+    ],
+    "low-heat": [
+      "Remove your phone case while playing — it traps heat.",
+      "Avoid playing while charging.",
+      "Take a 5-minute break every 20–30 minutes to let the chipset cool."
+    ],
+    "low-both": [
+      "Close background apps and restart your phone before playing.",
+      "Remove your case and avoid charging while playing.",
+      "Cap sessions at 15–20 minutes with breaks in between."
+    ],
+    "mid-lag": [
+      "Disable non-essential visual effects in gameplay settings (auto-pickup animations, killcam).",
+      "Close background apps, especially other social/chat apps.",
+      "Make sure you're on a stable connection — network lag is often mistaken for graphics lag."
+    ],
+    "mid-heat": [
+      "Play in a cooler environment — avoid direct sun or hot rooms.",
+      "Remove your case during long sessions.",
+      "Avoid fast-charging while playing."
+    ],
+    "mid-both": [
+      "Disable extra visual effects and close background apps.",
+      "Remove your case and keep sessions under 30 minutes in hot conditions.",
+      "Avoid charging while playing."
+    ],
+    "high-lag": [
+      "Your hardware can likely handle higher settings — try Medium–High before dropping further.",
+      "Check for a pending CODM update — new updates sometimes temporarily affect performance until optimized.",
+      "Close heavy background apps like streaming or recording apps."
+    ],
+    "high-heat": [
+      "On a capable phone, overheating is usually thermal/environmental, not a settings problem.",
+      "Play out of direct sunlight and remove your case during long sessions.",
+      "Avoid fast-charging while playing — this is the single biggest heat contributor on newer phones."
+    ],
+    "high-both": [
+      "Try Medium–High graphics first — your hardware likely isn't the bottleneck.",
+      "Remove your case, avoid direct sun, and don't charge while playing.",
+      "If it persists after a full restart, it may be worth checking for a pending system update."
+    ]
+  };
+
+  function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function setProgress(n) {
+    document.querySelectorAll('.progress div').forEach((d, i) => {
+      d.classList.toggle('active', i < n);
+    });
+  }
+
+  function goToStart() {
+    ram = null; issue = null;
+    setProgress(1);
+    showStep('step-ram-known');
+  }
+
+  function goToRamSelect() {
+    showStep('step-ram-select');
+  }
+
+  function goToModelLookup() {
+    showStep('step-model-lookup');
+  }
+
+  function setRam(value) {
+    ram = value;
+    setProgress(2);
+    showStep('step-issue');
+  }
+
+  function setRamFromModel(value) {
+    if (!value) return;
+    if (value === 'unknown') {
+      ram = 'mid'; // safe middle default when device is unlisted
+    } else {
+      ram = value;
+    }
+    setProgress(2);
+    showStep('step-issue');
+  }
+
+  function setIssue(value) {
+    issue = value;
+    setProgress(3);
+    renderResult();
+    showStep('step-result');
+  }
+
+  function renderResult() {
+    const p = profiles[ram];
+    const ramLabel = { low: "2–3GB", mid: "4GB", high: "6GB+" }[ram];
+    const issueLabel = { lag: "Lag / Stutter", heat: "Overheating", both: "Lag + Overheating" }[issue];
+
+    document.getElementById('result-title').textContent = `${ramLabel} Profile — ${issueLabel}`;
+
+    const settingsHtml = `
+      <div class="setting-row"><span class="setting-name">Graphics</span><span class="setting-value">${p.graphics}</span></div>
+      <div class="setting-row"><span class="setting-name">Frame Rate</span><span class="setting-value">${p.frameRate}</span></div>
+      <div class="setting-row"><span class="setting-name">Shadows</span><span class="setting-value">${p.shadows}</span></div>
+      <div class="setting-row"><span class="setting-name">Style</span><span class="setting-value">${p.style}</span></div>
+      <div class="setting-row"><span class="setting-name">Render Resolution</span><span class="setting-value">${p.resolution}</span></div>
+    `;
+    document.getElementById('settings-list').innerHTML = settingsHtml;
+
+    const tips = tipsByCase[`${ram}-${issue}`] || [];
+    document.getElementById('tips-list').innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+  }
+</script>
+</body>
+</html>
