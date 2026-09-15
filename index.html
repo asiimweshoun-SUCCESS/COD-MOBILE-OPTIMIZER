@@ -1,521 +1,504 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mobile Game Performance Optimizer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>DailyGameFixes — Get your exact settings</title>
+<meta name="description" content="Stop guessing your graphics settings. Get the exact setup for your phone and your game, in under a minute." />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#121416" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <style>
-  :root {
-    --bg: #14171A;
-    --bg-panel: #1C2024;
-    --line: #2A2F35;
-    --orange: #FF5A1F;
-    --cyan: #3FD6C5;
-    --text: #E7EAEC;
-    --text-dim: #8A9299;
+  :root{
+    --bg:#121416;
+    --panel:#1B1F23;
+    --panel-alt:#20262c;
+    --border:#2A3036;
+    --text:#EDEDED;
+    --muted:#8A8F98;
+    --accent:#FDBA3C;
+    --accent-dim:#8a6a26;
+    --good:#6EE7B7;
+    --bad:#FF6B5E;
+    --font-display: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", "Roboto Mono", "Droid Sans Mono", Menlo, Consolas, monospace;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    padding: 24px 16px;
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-display);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:48px;
   }
-  .app { width: 100%; max-width: 440px; }
-  .scanline {
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    margin-bottom: 20px;
-    opacity: 0.6;
+  .mono{ font-family:var(--font-mono); }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px;
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; background:rgba(18,20,22,0.92); backdrop-filter:blur(6px);
+    z-index:10;
   }
-  header { margin-bottom: 28px; }
-  .tag {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--cyan);
-    letter-spacing: 0.08em;
+  .wordmark{
+    display:flex; align-items:baseline; gap:8px;
+    font-weight:700; font-size:17px; letter-spacing:-0.01em;
   }
-  h1 {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 30px;
-    font-weight: 700;
-    line-height: 1.15;
-    margin-top: 6px;
+  .wordmark .dot{ color:var(--accent); }
+  #install-btn{
+    display:none;
+    background:transparent; border:1px solid var(--accent); color:var(--accent);
+    font-family:var(--font-mono); font-size:12px;
+    padding:8px 12px; border-radius:3px; cursor:pointer;
   }
-  .sub { color: var(--text-dim); font-size: 14px; margin-top: 8px; line-height: 1.5; }
-  .progress { display: flex; gap: 6px; margin: 24px 0; }
-  .progress div { height: 3px; flex: 1; background: var(--line); border-radius: 2px; transition: background 0.3s; }
-  .progress div.active { background: var(--orange); }
-  .panel { background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
-  .step { display: none; }
-  .step.active { display: block; }
-  .q-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-dim);
-    letter-spacing: 0.08em;
-    margin-bottom: 6px;
+  #install-btn:active{ transform:translateY(1px); }
+
+  main{ max-width:520px; margin:0 auto; padding:0 20px; }
+
+  .hero{ padding:36px 0 28px; }
+  .hero .readout{
+    font-family:var(--font-mono);
+    color:var(--accent);
+    font-size:12px;
+    letter-spacing:0.04em;
+    display:flex; align-items:center; gap:8px;
+    margin-bottom:14px;
   }
-  .q-title { font-size: 17px; font-weight: 600; margin-bottom: 18px; }
-  .options { display: flex; flex-direction: column; gap: 10px; }
-  .opt {
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 14px 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    color: var(--text);
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+  .hero .readout::before{
+    content:''; width:6px; height:6px; border-radius:50%; background:var(--good);
+    box-shadow:0 0 6px var(--good);
   }
-  .opt:hover { border-color: var(--cyan); }
-  .opt:active { background: #22272C; }
-  .opt .hint { display: block; font-size: 12px; color: var(--text-dim); margin-top: 3px; }
-  select {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 14px 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    color: var(--text);
+  .hero h1{
+    font-size:32px; line-height:1.15; font-weight:600; margin:0 0 14px;
+    letter-spacing:-0.01em; max-width:15ch;
   }
-  .back-link {
-    display: inline-block;
-    margin-top: 16px;
-    font-size: 13px;
-    color: var(--text-dim);
-    cursor: pointer;
-    text-decoration: underline;
+  .hero p{ color:var(--muted); font-size:15px; line-height:1.55; max-width:38ch; margin:0; }
+
+  .steps-nav{
+    display:flex; gap:6px; margin:28px 0 18px;
   }
-  .result-tag {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--orange);
-    letter-spacing: 0.08em;
+  .steps-nav .seg{
+    flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden;
   }
-  .result-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 24px;
-    font-weight: 700;
-    margin: 6px 0 20px;
+  .steps-nav .seg.done, .steps-nav .seg.active{ background:var(--accent); }
+
+  .step{ display:none; padding-bottom:8px; }
+  .step.visible{ display:block; }
+  .step-label{
+    font-family:var(--font-mono); font-size:11px; color:var(--muted);
+    letter-spacing:0.06em; margin-bottom:10px;
   }
-  .setting-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: 14px;
+  .step h2{ font-size:20px; margin:0 0 18px; font-weight:600; }
+
+  .option-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .option-grid.single{ grid-template-columns:1fr; }
+  .option{
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:16px 14px; cursor:pointer; text-align:left;
+    transition:border-color .15s ease, background .15s ease;
   }
-  .setting-row:last-of-type { border-bottom: none; }
-  .setting-name { color: var(--text-dim); flex-shrink: 0; }
-  .setting-value {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    color: var(--cyan);
-    text-align: right;
-    max-width: 60%;
-    white-space: normal;
-    word-break: break-word;
+  .option:hover{ border-color:var(--accent-dim); }
+  .option.selected{ border-color:var(--accent); background:var(--panel-alt); }
+  .option .name{ font-weight:600; font-size:15px; margin-bottom:3px; }
+  .option .sub{ font-size:12px; color:var(--muted); font-family:var(--font-mono); }
+
+  .issue-list{ display:flex; flex-direction:column; gap:8px; }
+  .issue-list .option{ display:flex; align-items:center; justify-content:space-between; }
+
+  .tier-hint{
+    margin-top:14px; font-size:12px; color:var(--muted); line-height:1.6;
+    border-left:2px solid var(--border); padding-left:10px;
   }
-  .tips { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
-  .tips .q-label { color: var(--orange); }
-  .tips ul { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-  .tips li { font-size: 14px; line-height: 1.5; padding-left: 16px; position: relative; color: var(--text); }
-  .tips li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 7px;
-    width: 5px;
-    height: 5px;
-    background: var(--orange);
+  .tier-hint b{ color:var(--text); }
+
+  .btn-row{ display:flex; gap:10px; margin-top:22px; }
+  .btn{
+    font-family:var(--font-display); font-weight:600; font-size:14px;
+    padding:13px 18px; border-radius:6px; border:1px solid transparent; cursor:pointer;
   }
-  .restart {
-    width: 100%;
-    margin-top: 24px;
-    background: transparent;
-    border: 1px solid var(--line);
-    color: var(--text-dim);
-    border-radius: 6px;
-    padding: 12px;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    cursor: pointer;
+  .btn-primary{ background:var(--accent); color:#161616; flex:1; }
+  .btn-primary:disabled{ background:var(--border); color:var(--muted); cursor:not-allowed; }
+  .btn-ghost{ background:transparent; border:1px solid var(--border); color:var(--text); }
+
+  /* results */
+  .result-panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    padding:0; overflow:hidden; margin-top:6px;
   }
-  .restart:hover { border-color: var(--cyan); color: var(--text); }
+  .result-head{
+    padding:16px 18px; border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .result-head .title{ font-weight:600; font-size:15px; }
+  .result-head .tag{
+    font-family:var(--font-mono); font-size:11px; color:var(--accent);
+    border:1px solid var(--accent-dim); padding:3px 8px; border-radius:20px;
+  }
+  .row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 18px; border-bottom:1px solid var(--border);
+    font-size:14px;
+  }
+  .row:last-child{ border-bottom:none; }
+  .row .label{ color:var(--muted); }
+  .row .value{ font-family:var(--font-mono); font-weight:600; }
+
+  .tip-box{
+    margin-top:16px; background:var(--panel-alt); border:1px solid var(--border);
+    border-radius:8px; padding:16px 18px;
+  }
+  .tip-box .tip-label{
+    font-family:var(--font-mono); font-size:11px; color:var(--good);
+    letter-spacing:0.05em; margin-bottom:6px;
+  }
+  .tip-box p{ margin:0; font-size:14px; line-height:1.55; color:var(--text); }
+
+  .result-actions{ display:flex; gap:10px; margin-top:20px; }
+
+  footer{
+    max-width:520px; margin:48px auto 0; padding:0 20px;
+    color:var(--muted); font-size:12px; text-align:center;
+  }
+
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--panel); border:1px solid var(--accent-dim); color:var(--text);
+    padding:10px 16px; border-radius:6px; font-size:13px; opacity:0;
+    transition:all .25s ease; pointer-events:none; font-family:var(--font-mono);
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="scanline"></div>
-  <header>
-    <div class="tag" id="header-tag">DEVICE SCAN</div>
-    <h1>Performance Optimizer</h1>
-    <p class="sub">Answer a few questions about your phone. Get settings built for your exact hardware — not generic advice.</p>
-  </header>
 
-  <div class="progress">
-    <div id="p1" class="active"></div>
-    <div id="p2"></div>
-    <div id="p3"></div>
-    <div id="p4"></div>
+<header>
+  <div class="wordmark">DailyGameFixes<span class="dot">.</span></div>
+  <button id="install-btn">Install app</button>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="readout">DIAGNOSTIC READY</div>
+    <h1>Stop guessing your graphics settings.</h1>
+    <p>Answer three questions. Get the exact setup for your phone and your game — tuned for the problem you're actually having.</p>
   </div>
 
-  <div class="panel">
-
-    <!-- Step 0: Game select -->
-    <div class="step active" id="step-game">
-      <div class="q-label">STEP 1 / 4</div>
-      <div class="q-title">Which game are you optimizing for?</div>
-      <div class="options">
-        <button class="opt" onclick="setGame('codm')">Call of Duty: Mobile</button>
-        <button class="opt" onclick="setGame('mlbb')">Mobile Legends: Bang Bang</button>
-      </div>
-    </div>
-
-    <!-- Step 1: RAM known? -->
-    <div class="step" id="step-ram-known">
-      <div class="q-label">STEP 2 / 4</div>
-      <div class="q-title">Do you know your phone's RAM?</div>
-      <div class="options">
-        <button class="opt" onclick="goToRamSelect()">Yes, I know it</button>
-        <button class="opt" onclick="goToModelLookup()">Not sure — let me find my model</button>
-      </div>
-      <span class="back-link" onclick="goToStart()">← Back</span>
-    </div>
-
-    <!-- Step 1a: RAM select -->
-    <div class="step" id="step-ram-select">
-      <div class="q-label">STEP 2 / 4</div>
-      <div class="q-title">How much RAM does your phone have?</div>
-      <div class="options">
-        <button class="opt" onclick="setRam('low')">2–3GB<span class="hint">Entry-level budget phone</span></button>
-        <button class="opt" onclick="setRam('mid')">4GB<span class="hint">Common budget/mid phone</span></button>
-        <button class="opt" onclick="setRam('high')">6GB+<span class="hint">Mid-range or newer phone</span></button>
-      </div>
-      <span class="back-link" onclick="goToRamKnown()">← Back</span>
-    </div>
-
-    <!-- Step 1b: Model lookup -->
-    <div class="step" id="step-model-lookup">
-      <div class="q-label">STEP 2 / 4</div>
-      <div class="q-title">Select your phone model</div>
-      <select id="model-select" onchange="setRamFromModel(this.value)">
-        <option value="">— Choose your model —</option>
-        <optgroup label="2–3GB RAM">
-          <option value="low">Infinix Smart 8 / Smart 8 HD</option>
-          <option value="low">iKall I1 4G</option>
-          <option value="low">Lava O1</option>
-          <option value="low">Lava Bold N4 Lite</option>
-        </optgroup>
-        <optgroup label="4GB RAM">
-          <option value="mid">Samsung Galaxy F05</option>
-          <option value="mid">Samsung Galaxy F70e 5G</option>
-          <option value="mid">itel Zeno F30 5G</option>
-          <option value="mid">itel Zeno 20 Max</option>
-          <option value="mid">Redmi 13C (4GB)</option>
-          <option value="mid">Lava Blaze 2 4G</option>
-        </optgroup>
-        <optgroup label="6GB+ RAM">
-          <option value="high">Redmi A4 5G</option>
-          <option value="high">Redmi 14C</option>
-          <option value="high">Redmi Note 15</option>
-          <option value="high">POCO M7 Pro</option>
-          <option value="high">POCO X7</option>
-          <option value="high">Infinix Note 50X</option>
-          <option value="high">Infinix Hot 50 5G</option>
-          <option value="high">realme P3</option>
-          <option value="high">realme Narzo 70 Turbo</option>
-          <option value="high">Tecno Pova 6 Neo</option>
-          <option value="high">Moto G64</option>
-        </optgroup>
-        <option value="unknown">My phone isn't listed</option>
-      </select>
-      <span class="back-link" onclick="goToRamKnown()">← Back</span>
-    </div>
-
-    <!-- Step 2: Issue -->
-    <div class="step" id="step-issue">
-      <div class="q-label">STEP 3 / 4</div>
-      <div class="q-title">What's the main problem?</div>
-      <div class="options">
-        <button class="opt" onclick="setIssue('lag')">Lag / stutter / frame drops</button>
-        <button class="opt" onclick="setIssue('heat')">Overheating</button>
-        <button class="opt" onclick="setIssue('both')">Both</button>
-        <button class="opt" onclick="setIssue('storage')">Storage space issues</button>
-        <button class="opt" onclick="setIssue('ping')">Ping / connection issues</button>
-        <button class="opt" onclick="setIssue('battery')">Battery draining fast</button>
-      </div>
-      <span class="back-link" onclick="goToRamKnown()">← Back</span>
-    </div>
-
-    <!-- Step 3: Result -->
-    <div class="step" id="step-result">
-      <div class="result-tag" id="result-tag">SCAN COMPLETE</div>
-      <div class="result-title" id="result-title"></div>
-
-      <div id="settings-list"></div>
-
-      <div class="tips">
-        <div class="q-label" id="tips-label">ALSO DO THIS</div>
-        <ul id="tips-list"></ul>
-      </div>
-
-      <button class="restart" onclick="goToStart()">Run scan again</button>
-    </div>
-
+  <div class="steps-nav">
+    <div class="seg active" data-seg="0"></div>
+    <div class="seg" data-seg="1"></div>
+    <div class="seg" data-seg="2"></div>
+    <div class="seg" data-seg="3"></div>
   </div>
-</div>
+
+  <!-- Step 0: game -->
+  <section class="step visible" data-step="0">
+    <div class="step-label">STEP 1 / 3</div>
+    <h2>Which game?</h2>
+    <div class="option-grid" id="game-options"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="next-0" disabled>Continue</button>
+    </div>
+  </section>
+
+  <!-- Step 1: issue -->
+  <section class="step" data-step="1">
+    <div class="step-label">STEP 2 / 3</div>
+    <h2>What's the problem?</h2>
+    <div class="issue-list" id="issue-options"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="back-1">Back</button>
+      <button class="btn btn-primary" id="next-1" disabled>Continue</button>
+    </div>
+  </section>
+
+  <!-- Step 2: tier -->
+  <section class="step" data-step="2">
+    <div class="step-label">STEP 3 / 3</div>
+    <h2>How much RAM does your phone have?</h2>
+    <div class="option-grid single" id="tier-options"></div>
+    <div class="tier-hint">Not sure? <b>2–3GB</b>: most sub-$100 phones. <b>4GB</b>: common mid-range (Redmi A/Note, Infinix Hot, Tecno Spark). <b>6GB</b>: upper mid-range. <b>8GB+</b>: flagship or gaming phones.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="back-2">Back</button>
+      <button class="btn btn-primary" id="next-2" disabled>Get my settings</button>
+    </div>
+  </section>
+
+  <!-- Step 3: results -->
+  <section class="step" data-step="3">
+    <div class="step-label">RESULT</div>
+    <div class="result-panel">
+      <div class="result-head">
+        <div class="title" id="result-title">—</div>
+        <div class="tag" id="result-tag">—</div>
+      </div>
+      <div id="result-rows"></div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-label">WHY THIS FIXES IT</div>
+      <p id="result-tip">—</p>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-ghost" id="restart">Start over</button>
+      <button class="btn btn-primary" id="share-btn">Share my results</button>
+    </div>
+  </section>
+</main>
+
+<footer>Settings are starting points based on device RAM tier — nudge from there based on how your exact phone performs.</footer>
+
+<div id="toast"></div>
+<canvas id="share-canvas" width="1080" height="1350" style="display:none;"></canvas>
 
 <script>
-  let game = null;
-  let ram = null;
-  let issue = null;
+// ---------- Data ----------
+const GAMES = [
+  { id:'codm', name:'Call of Duty Mobile', sub:'Battle Royale / Multiplayer' },
+  { id:'mlbb', name:'Mobile Legends: Bang Bang', sub:'MOBA' },
+];
 
-  const gameLabels = { codm: "Call of Duty: Mobile", mlbb: "Mobile Legends: Bang Bang" };
-  const gameTag = { codm: "CODM DEVICE SCAN", mlbb: "MLBB DEVICE SCAN" };
-  const otherIssues = ['storage', 'ping', 'battery'];
-  const issueTitles = {
-    storage: "Storage Space Fixes",
-    ping: "Ping / Connection Fixes",
-    battery: "Battery Drain Fixes"
-  };
-  const otherTips = {
-    storage: [
-      "Delete old replay files, killcams, or recorded clips saved locally on your device.",
-      "Uninstall other large apps you rarely use to free up space before updates.",
-      "Move photos and videos to cloud storage instead of keeping them on-device.",
-      "Clear the game's cache after big updates — it often keeps old files temporarily even after installing the new version."
-    ],
-    ping: [
-      "Switch to 5GHz WiFi if your router supports it — much more stable for gaming than 2.4GHz.",
-      "Close other apps using data in the background — downloads, streaming, or cloud backups compete for bandwidth.",
-      "If you're on mobile data, try disabling WiFi calling or any active VPN, both can cause conflicts.",
-      "If spikes happen at the same time each day, try restarting your router — many ISPs have predictable peak-hour congestion."
-    ],
-    battery: [
-      "Lower your screen brightness while playing — the display is one of the single biggest battery drains.",
-      "Avoid playing while charging — this also reduces overheating, and charging while playing degrades battery health over time.",
-      "Turn off background app refresh for apps you're not actively using.",
-      "If you're away from a charger, use a lower graphics profile even if your phone can technically handle more — this extends session length."
-    ]
-  };
+const ISSUES = [
+  { id:'lag', name:'Lag / low FPS', sub:'Game freezes or drops frames' },
+  { id:'overheat', name:'Phone overheating', sub:'Gets hot, throttles after a while' },
+  { id:'storage', name:'Running out of storage', sub:'Game won\'t update or install' },
+  { id:'ping', name:'High ping / disconnects', sub:'Rubber-banding, connection drops' },
+  { id:'battery', name:'Battery drains fast', sub:'Dies within an hour of play' },
+];
 
-  const profiles = {
-    codm: {
-      low:  { graphics: "Low",           frameRate: "Max",  shadows: "Off", style: "Smooth",             resolution: "Low" },
-      mid:  { graphics: "Medium",         frameRate: "High", shadows: "Off", style: "Smooth",             resolution: "Medium" },
-      high: { graphics: "Medium–High",    frameRate: "High", shadows: "Off", style: "Smooth or Realistic", resolution: "High" }
-    },
-    mlbb: {
-      low:  { graphics: "Low",        frameRate: "Low–Medium (30fps)", shadows: "Off", style: "HD Mode Off, Outline Off", resolution: "Low" },
-      mid:  { graphics: "Medium",     frameRate: "Medium–High",        shadows: "Off", style: "HD Mode Off",             resolution: "Medium" },
-      high: { graphics: "Medium–High", frameRate: "High–Ultra",        shadows: "Optional", style: "Smooth Mode On",     resolution: "High" }
-    }
-  };
+const TIERS = [
+  { id:'2gb', name:'2–3GB RAM', sub:'Entry-level phone' },
+  { id:'4gb', name:'4GB RAM', sub:'Common mid-range' },
+  { id:'6gb', name:'6GB RAM', sub:'Upper mid-range' },
+  { id:'8gb', name:'8GB+ RAM', sub:'Flagship / gaming phone' },
+];
 
-  const tipsByCase = {
-    codm: {
-      "low-lag": [
-        "Close every background app before launching CODM — even ones you think are closed.",
-        "Restart your phone before long play sessions to clear memory.",
-        "Play in 15–20 minute sessions with short breaks — performance degrades as memory fills up."
-      ],
-      "low-heat": [
-        "Remove your phone case while playing — it traps heat.",
-        "Avoid playing while charging.",
-        "Take a 5-minute break every 20–30 minutes to let the chipset cool."
-      ],
-      "low-both": [
-        "Close background apps and restart your phone before playing.",
-        "Remove your case and avoid charging while playing.",
-        "Cap sessions at 15–20 minutes with breaks in between."
-      ],
-      "mid-lag": [
-        "Disable non-essential visual effects in gameplay settings (auto-pickup animations, killcam).",
-        "Close background apps, especially other social/chat apps.",
-        "Make sure you're on a stable connection — network lag is often mistaken for graphics lag."
-      ],
-      "mid-heat": [
-        "Play in a cooler environment — avoid direct sun or hot rooms.",
-        "Remove your case during long sessions.",
-        "Avoid fast-charging while playing."
-      ],
-      "mid-both": [
-        "Disable extra visual effects and close background apps.",
-        "Remove your case and keep sessions under 30 minutes in hot conditions.",
-        "Avoid charging while playing."
-      ],
-      "high-lag": [
-        "Your hardware can likely handle higher settings — try Medium–High before dropping further.",
-        "Check for a pending CODM update — new updates sometimes temporarily affect performance until optimized.",
-        "Close heavy background apps like streaming or recording apps."
-      ],
-      "high-heat": [
-        "On a capable phone, overheating is usually thermal/environmental, not a settings problem.",
-        "Play out of direct sunlight and remove your case during long sessions.",
-        "Avoid fast-charging while playing — this is the single biggest heat contributor on newer phones."
-      ],
-      "high-both": [
-        "Try Medium–High graphics first — your hardware likely isn't the bottleneck.",
-        "Remove your case, avoid direct sun, and don't charge while playing.",
-        "If it persists after a full restart, it may be worth checking for a pending system update."
-      ]
-    },
-    mlbb: {
-      "low-lag": [
-        "Turn off HD Mode, Outline, and Screen Shake — these drain the most on 2–3GB devices.",
-        "Close all background apps before launching MLBB, including chat/social apps.",
-        "Clear MLBB's cache weekly — buildup past 500MB causes stutter during skill animations."
-      ],
-      "low-heat": [
-        "Remove your phone case while playing.",
-        "Avoid playing while charging — this is the single biggest heat contributor.",
-        "Limit sessions to 20–30 minutes with breaks to let the chipset cool."
-      ],
-      "low-both": [
-        "Disable HD Mode, Outline, and Screen Shake, and close background apps first.",
-        "Remove your case and avoid charging while playing.",
-        "Keep sessions short (15–20 min) with breaks in between."
-      ],
-      "mid-lag": [
-        "Turn off HD Mode — it's the biggest single performance drain at this tier.",
-        "Enable Smooth Mode if available for a more consistent frame rate.",
-        "Close background apps, especially streaming or recording apps."
-      ],
-      "mid-heat": [
-        "Play in a cooler environment, out of direct sunlight.",
-        "Remove your case during longer sessions.",
-        "Avoid fast-charging while playing."
-      ],
-      "mid-both": [
-        "Turn off HD Mode and close background apps before playing.",
-        "Remove your case and avoid charging during sessions.",
-        "Keep an eye on session length in hot environments — take breaks."
-      ],
-      "high-lag": [
-        "Your hardware can likely handle higher settings — try enabling Ultra frame rate.",
-        "If Ultra options are missing, clear cache/data — MLBB sometimes needs a nudge to unlock them.",
-        "Close heavy background apps like streaming or screen recording."
-      ],
-      "high-heat": [
-        "On a capable phone, overheating is usually thermal/environmental, not a settings issue.",
-        "Avoid direct sunlight and remove your case during long sessions.",
-        "Avoid fast-charging while playing."
-      ],
-      "high-both": [
-        "Try Medium–High graphics and Smooth Mode first — your hardware likely isn't the bottleneck.",
-        "Remove your case, avoid direct sun, and don't charge while playing.",
-        "Clear cache if issues persist after a full restart."
-      ]
-    }
-  };
-
-  function showStep(id) {
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+const BASE = {
+  codm: {
+    '2gb': { Graphics:'Low', 'Frame rate':'Medium (30fps)', Resolution:'70%', Shadows:'Off', 'Render style':'Low', 'Anti-aliasing':'Off' },
+    '4gb': { Graphics:'Low', 'Frame rate':'High (40fps)', Resolution:'85%', Shadows:'Off', 'Render style':'Medium', 'Anti-aliasing':'Off' },
+    '6gb': { Graphics:'Medium', 'Frame rate':'High (40fps)', Resolution:'100%', Shadows:'Off', 'Render style':'Medium', 'Anti-aliasing':'Off' },
+    '8gb': { Graphics:'High', 'Frame rate':'Max (60/90fps)', Resolution:'100%', Shadows:'On', 'Render style':'High', 'Anti-aliasing':'On' },
+  },
+  mlbb: {
+    '2gb': { Graphics:'Smooth', 'Frame rate':'Standard', Resolution:'Low', Shadows:'Off', 'Battle effects':'Simple', 'Anti-aliasing':'Off' },
+    '4gb': { Graphics:'Smooth', 'Frame rate':'High', Resolution:'Medium', Shadows:'Off', 'Battle effects':'Simple', 'Anti-aliasing':'Off' },
+    '6gb': { Graphics:'High', 'Frame rate':'High', Resolution:'Medium', Shadows:'Off', 'Battle effects':'Fancy', 'Anti-aliasing':'Off' },
+    '8gb': { Graphics:'High', 'Frame rate':'Ultra', Resolution:'High', Shadows:'On', 'Battle effects':'Fancy', 'Anti-aliasing':'On' },
   }
+};
 
-  function setProgress(n) {
-    document.querySelectorAll('.progress div').forEach((d, i) => {
-      d.classList.toggle('active', i < n);
+const FRAME_STEP_DOWN = {
+  codm: { 'Max (60/90fps)':'High (40fps)', 'High (40fps)':'Medium (30fps)', 'Medium (30fps)':'Medium (30fps)' },
+  mlbb: { 'Ultra':'High', 'High':'Standard', 'Standard':'Standard' }
+};
+
+const ISSUE_TIPS = {
+  lag: 'Resolution and shadows cost the most frames for the least visual difference — dropping them first buys you the most FPS with the smallest visual trade-off.',
+  overheat: 'Heat-related throttling is the #1 hidden cause of lag on budget phones — the settings below cap frame rate one notch below max so your chip runs cooler instead of overheating and slowing itself down mid-match.',
+  storage: 'Clear the game\'s cache (not its data — that keeps your account) once a week from your phone\'s app settings, and remove voice packs, skins, or graphics packs for modes you don\'t play.',
+  ping: 'Switch to Wi-Fi when you can, and pause any background downloads or auto-updates before you queue up — they quietly compete with the game for the same bandwidth.',
+  battery: 'Turn on your phone\'s battery saver for every app except the game, and drop screen brightness — on most phones the display uses more power during a match than the game engine itself.'
+};
+
+// ---------- State ----------
+let state = { game:null, issue:null, tier:null };
+
+// ---------- Render option pickers ----------
+function renderOptions(container, items, key, gridEl, single){
+  gridEl.innerHTML = '';
+  items.forEach(item => {
+    const el = document.createElement('button');
+    el.className = 'option';
+    el.innerHTML = `<div class="name">${item.name}</div><div class="sub">${item.sub}</div>`;
+    el.addEventListener('click', () => {
+      state[key] = item.id;
+      [...gridEl.children].forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      updateNextButtons();
     });
+    gridEl.appendChild(el);
+  });
+}
+renderOptions(null, GAMES, 'game', document.getElementById('game-options'));
+renderOptions(null, ISSUES, 'issue', document.getElementById('issue-options'));
+renderOptions(null, TIERS, 'tier', document.getElementById('tier-options'));
+
+function updateNextButtons(){
+  document.getElementById('next-0').disabled = !state.game;
+  document.getElementById('next-1').disabled = !state.issue;
+  document.getElementById('next-2').disabled = !state.tier;
+}
+
+// ---------- Step navigation ----------
+let currentStep = 0;
+function goToStep(n){
+  document.querySelectorAll('.step').forEach(s => s.classList.toggle('visible', +s.dataset.step === n));
+  document.querySelectorAll('.seg').forEach(s => {
+    const idx = +s.dataset.seg;
+    s.classList.toggle('done', idx < n);
+    s.classList.toggle('active', idx === n);
+  });
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('next-0').addEventListener('click', () => goToStep(1));
+document.getElementById('back-1').addEventListener('click', () => goToStep(0));
+document.getElementById('next-1').addEventListener('click', () => goToStep(2));
+document.getElementById('back-2').addEventListener('click', () => goToStep(1));
+document.getElementById('next-2').addEventListener('click', () => { buildResults(); goToStep(3); });
+document.getElementById('restart').addEventListener('click', () => {
+  state = { game:null, issue:null, tier:null };
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  updateNextButtons();
+  goToStep(0);
+});
+
+// ---------- Results ----------
+function buildResults(){
+  const gameMeta = GAMES.find(g => g.id === state.game);
+  const tierMeta = TIERS.find(t => t.id === state.tier);
+  const settings = { ...BASE[state.game][state.tier] };
+
+  if(state.issue === 'overheat'){
+    const stepDown = FRAME_STEP_DOWN[state.game][settings['Frame rate']];
+    settings['Frame rate'] = stepDown;
   }
 
-  function goToStart() {
-    game = null; ram = null; issue = null;
-    setProgress(1);
-    showStep('step-game');
-  }
+  document.getElementById('result-title').textContent = `${gameMeta.name}`;
+  document.getElementById('result-tag').textContent = tierMeta.name;
 
-  function setGame(value) {
-    game = value;
-    document.getElementById('header-tag').textContent = gameTag[game];
-    setProgress(2);
-    showStep('step-ram-known');
-  }
+  const rowsEl = document.getElementById('result-rows');
+  rowsEl.innerHTML = '';
+  Object.entries(settings).forEach(([label, value]) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+    rowsEl.appendChild(row);
+  });
 
-  function goToRamKnown() {
-    setProgress(2);
-    showStep('step-ram-known');
-  }
+  document.getElementById('result-tip').textContent = ISSUE_TIPS[state.issue];
 
-  function goToRamSelect() {
-    showStep('step-ram-select');
-  }
+  window._lastResult = { gameMeta, tierMeta, settings, issue: ISSUES.find(i => i.id === state.issue) };
+}
 
-  function goToModelLookup() {
-    showStep('step-model-lookup');
-  }
+// ---------- Share card ----------
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  const { gameMeta, tierMeta, settings, issue } = window._lastResult;
 
-  function setRam(value) {
-    ram = value;
-    setProgress(3);
-    showStep('step-issue');
-  }
+  ctx.fillStyle = '#121416';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  function setRamFromModel(value) {
-    if (!value) return;
-    if (value === 'unknown') {
-      ram = 'mid'; // safe middle default when device is unlisted
+  ctx.strokeStyle = '#2A3036';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(40,40,canvas.width-80,canvas.height-80);
+
+  ctx.fillStyle = '#8A8F98';
+  ctx.font = '28px monospace';
+  ctx.fillText('DAILYGAMEFIXES.APP', 80, 130);
+
+  ctx.fillStyle = '#FDBA3C';
+  ctx.font = '600 24px monospace';
+  ctx.fillText(`FIXED: ${issue.name.toUpperCase()}`, 80, 180);
+
+  ctx.fillStyle = '#EDEDED';
+  ctx.font = '600 56px sans-serif';
+  wrapText(ctx, gameMeta.name, 80, 270, 900, 62);
+
+  ctx.fillStyle = '#8A8F98';
+  ctx.font = '30px sans-serif';
+  ctx.fillText(`Tuned for ${tierMeta.name}`, 80, 400);
+
+  let y = 480;
+  Object.entries(settings).forEach(([label, value]) => {
+    ctx.fillStyle = '#8A8F98';
+    ctx.font = '28px monospace';
+    ctx.fillText(label, 80, y);
+    ctx.fillStyle = '#6EE7B7';
+    ctx.font = '600 28px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(value), canvas.width-80, y);
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = '#2A3036';
+    ctx.beginPath(); ctx.moveTo(80, y+22); ctx.lineTo(canvas.width-80, y+22); ctx.stroke();
+    y += 70;
+  });
+
+  ctx.fillStyle = '#8A8F98';
+  ctx.font = '24px monospace';
+  ctx.fillText('Get your own settings — free', 80, canvas.height-70);
+
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], 'my-game-settings.png', { type: 'image/png' });
+    if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
+      try{
+        await navigator.share({ files:[file], title:'My game settings', text:'Check your settings at DailyGameFixes' });
+        return;
+      }catch(e){ /* fall through to download */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'my-game-settings.png';
+    a.click();
+    showToast('Image saved — share it anywhere');
+  }, 'image/png');
+});
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '';
+  let curY = y;
+  for(let i=0;i<words.length;i++){
+    const test = line + words[i] + ' ';
+    if(ctx.measureText(test).width > maxWidth && i > 0){
+      ctx.fillText(line, x, curY);
+      line = words[i] + ' ';
+      curY += lineHeight;
     } else {
-      ram = value;
+      line = test;
     }
-    setProgress(3);
-    showStep('step-issue');
   }
+  ctx.fillText(line, x, curY);
+}
 
-  function setIssue(value) {
-    issue = value;
-    setProgress(4);
-    renderResult();
-    showStep('step-result');
-  }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
 
-  function renderResult() {
-    if (otherIssues.includes(issue)) {
-      document.getElementById('result-title').textContent = `${gameLabels[game]} — ${issueTitles[issue]}`;
-      document.getElementById('settings-list').innerHTML = '';
-      document.getElementById('tips-label').textContent = 'HERE\'S THE FIX';
-      const tips = otherTips[issue] || [];
-      document.getElementById('tips-list').innerHTML = tips.map(t => `<li>${t}</li>`).join('');
-      return;
-    }
+// ---------- PWA install ----------
+let deferredPrompt;
+const installBtn = document.getElementById('install-btn');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'inline-block';
+});
+installBtn.addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.style.display = 'none';
+});
+window.addEventListener('appinstalled', () => showToast('Installed — find it on your home screen'));
 
-    const p = profiles[game][ram];
-    const ramLabel = { low: "2–3GB", mid: "4GB", high: "6GB+" }[ram];
-    const issueLabel = { lag: "Lag / Stutter", heat: "Overheating", both: "Lag + Overheating" }[issue];
-
-    document.getElementById('result-title').textContent = `${gameLabels[game]} — ${ramLabel} Profile — ${issueLabel}`;
-
-    const settingsHtml = `
-      <div class="setting-row"><span class="setting-name">Graphics</span><span class="setting-value">${p.graphics}</span></div>
-      <div class="setting-row"><span class="setting-name">Frame Rate</span><span class="setting-value">${p.frameRate}</span></div>
-      <div class="setting-row"><span class="setting-name">Shadows</span><span class="setting-value">${p.shadows}</span></div>
-      <div class="setting-row"><span class="setting-name">Style</span><span class="setting-value">${p.style}</span></div>
-      <div class="setting-row"><span class="setting-name">Render Resolution</span><span class="setting-value">${p.resolution}</span></div>
-    `;
-    document.getElementById('settings-list').innerHTML = settingsHtml;
-
-    document.getElementById('tips-label').textContent = 'ALSO DO THIS';
-    const tips = tipsByCase[game][`${ram}-${issue}`] || [];
-    document.getElementById('tips-list').innerHTML = tips.map(t => `<li>${t}</li>`).join('');
-  }
+// ---------- Service worker ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
